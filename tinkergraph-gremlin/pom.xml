@@ -25,6 +25,10 @@ limitations under the License.
     </parent>
     <artifactId>tinkergraph-gremlin</artifactId>
     <name>Apache TinkerPop :: TinkerGraph Gremlin</name>
+    <packaging>bundle</packaging>
+    <properties>
+        <osgi.export>${project.groupId}.gremlin.tinkergraph.*</osgi.export>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>org.apache.tinkerpop</groupId>

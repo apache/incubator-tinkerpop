@@ -24,6 +24,9 @@ limitations under the License.
     </parent>
     <artifactId>gremlin-shaded</artifactId>
     <name>Apache TinkerPop :: Gremlin Shaded</name>
+    <properties>
+        <osgi.export>${project.groupId}.shaded.*</osgi.export>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>com.esotericsoftware</groupId>
@@ -104,6 +107,49 @@ limitations under the License.
                             <shadedArtifactAttached>false</shadedArtifactAttached>
                             <minimizeJar>false</minimizeJar>
                         </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!--
+            Unpack the shaded jar so that the maven-bundle-plugin can analyze the packages to import and to export
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>unpack-shade-kryo</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>${project.groupId}</groupId>
+                                    <artifactId>${project.artifactId}</artifactId>
+                                    <version>${project.version}</version>
+                                </artifactItem>
+                            </artifactItems>
+                            <outputDirectory>${project.build.directory}/classes</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!--
+            The maven-bundle-plugin must be called after the maven-shaded-plugin to analyze the relocated packages.
+            It must also be called after the maven-dependency-plugin has unpacked the shaded jar.
+            -->
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>bundle-shade-kryo</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>bundle</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>

@@ -144,6 +144,12 @@ limitations under the License.
         <hadoop.version>2.7.2</hadoop.version>
         <java.tuples.version>1.2</java.tuples.version>
         <javadoc-plugin.version>2.10.1</javadoc-plugin.version>
+        <hppc.version>0.7.1</hppc.version>
+        <jcabi-manifests.version>1.1</jcabi-manifests.version>
+        <ops4j.paxexam.version>4.8.0</ops4j.paxexam.version>
+        <ops4j.paxurl.version>1.6.0</ops4j.paxurl.version>
+        <apache.felix.version>5.4.0</apache.felix.version>
+        <javax.inject.version>1</javax.inject.version>
 
         <!--
         This file will come from the root of each modules test/resources/ directories. log4j-silent.properties will
@@ -154,6 +160,15 @@ limitations under the License.
         <log4j-silent.properties>file:target/test-classes/log4j-silent.properties</log4j-silent.properties>
 
         <muteTestLogs>false</muteTestLogs>
+
+        <!--
+        Configuration properties for the OSGi maven-bundle-plugin
+        -->
+        <osgi.embed></osgi.embed>
+        <osgi.export>${project.groupId}.*</osgi.export>
+        <osgi.export.embed></osgi.export.embed>
+        <osgi.import>!javax.*,!sun.*,!${osgi.export},*</osgi.import>
+
     </properties>
     <build>
         <directory>${basedir}/target</directory>
@@ -311,6 +326,11 @@ limitations under the License.
                     </dependency>
                 </dependencies>
             </plugin>
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <extensions>true</extensions>
+            </plugin>
         </plugins>
         <pluginManagement>
             <plugins>
@@ -365,6 +385,11 @@ limitations under the License.
                                     -Dbuild.dir=${project.build.directory}  -Dis.testing=true
                                 </argLine>
                                 <summaryFile>target/failsafe-reports/failsafe-integration.xml</summaryFile>
+                                <systemPropertyVariables>
+                                    <project.groupId>${project.groupId}</project.groupId>
+                                    <project.artifactId>${project.artifactId}</project.artifactId>
+                                    <project.version>${project.version}</project.version>
+                                </systemPropertyVariables>
                             </configuration>
                         </execution>
                         <execution>
@@ -429,6 +454,22 @@ limitations under the License.
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-javadoc-plugin</artifactId>
                     <version>${javadoc-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.felix</groupId>
+                    <artifactId>maven-bundle-plugin</artifactId>
+                    <version>3.0.1</version>
+                    <configuration>
+                        <instructions>
+                            <!-- stops the "uses" clauses being added to "Export-Package" manifest entry -->
+                            <_nouses>true</_nouses>
+                            <Import-Package>${osgi.import}</Import-Package>
+                            <Export-Package>${osgi.export}</Export-Package>
+                            <Embed-Dependency>${osgi.embed}</Embed-Dependency>
+                            <Embed-Transitive>true</Embed-Transitive>
+                            <_exportcontents>${osgi.export.embed}</_exportcontents>
+                        </instructions>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -591,6 +632,91 @@ limitations under the License.
                     </exclusion>
                 </exclusions>
             </dependency>
+
+            <!-- dependencies used to test OSGI bundles -->
+            <dependency>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>org.apache.felix.framework</artifactId>
+                <version>${apache.felix.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ops4j.pax.exam</groupId>
+                <artifactId>pax-exam-junit4</artifactId>
+                <version>${ops4j.paxexam.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-api</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.ops4j.pax.exam</groupId>
+                <artifactId>pax-exam-container-native</artifactId>
+                <version>${ops4j.paxexam.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.ops4j.base</groupId>
+                        <artifactId>ops4j-base-util-property</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.ops4j.base</groupId>
+                        <artifactId>ops4j-base-lang</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.ops4j.pax.url</groupId>
+                        <artifactId>pax-url-commons</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.ops4j.pax.url</groupId>
+                <artifactId>pax-url-aether</artifactId>
+                <version>${ops4j.paxurl.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.ops4j.base</groupId>
+                        <artifactId>ops4j-base-lang</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.codehaus.plexus</groupId>
+                        <artifactId>plexus-container-default</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.maven.wagon</groupId>
+                        <artifactId>wagon-provider-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.codehaus.plexus</groupId>
+                        <artifactId>plexus-utils</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.ops4j.pax.exam</groupId>
+                <artifactId>pax-exam-link-mvn</artifactId>
+                <version>${ops4j.paxexam.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>jcl-over-slf4j</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>javax.inject</groupId>
+                <artifactId>javax.inject</artifactId>
+                <version>${javax.inject.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
