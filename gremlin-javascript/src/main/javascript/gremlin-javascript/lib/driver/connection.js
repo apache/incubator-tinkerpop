@@ -23,7 +23,8 @@
 'use strict';
 
 const EventEmitter = require('events');
-const WebSocket = require('ws');
+//const WebSocket = require('ws');
+//var Buffer = require('buffer');
 const util = require('util');
 const utils = require('../utils');
 const serializer = require('../structure/io/graph-serializer');
@@ -119,55 +120,56 @@ class Connection extends EventEmitter {
 
     this.emit('log', `ws open`);
 
-    this._ws = new WebSocket(this.url, {
-      headers: this.options.headers,
-      ca: this.options.ca,
-      cert: this.options.cert,
-      pfx: this.options.pfx,
-      rejectUnauthorized: this.options.rejectUnauthorized
-    });
+    this._ws = new WebSocket(this.url);
 
-    this._ws.on('message', (data) => this._handleMessage(data));
-    this._ws.on('error', (err) => this._handleError(err));
-    this._ws.on('close', (code, message) => this._handleClose(code, message));
+    this._ws.onmessage = (data => this._handleMessage(data));
+    this._ws.onerror = (err => this._handleError(err));
+    this._ws.onclose = (code, message) => this._handleClose(code, message);
 
-    this._ws.on('pong', () => {
+    this._ws.pong = (() => {
       this.emit('log', 'ws pong received');
-      if (this._pongTimeout) {
-        clearTimeout(this._pongTimeout);
-        this._pongTimeout = null;
-      }
-    });
-    this._ws.on('ping', () => {
+    if (this._pongTimeout) {
+      clearTimeout(this._pongTimeout);
+      this._pongTimeout = null;
+    }
+  });
+    this._ws.ping = (() => {
       this.emit('log', 'ws ping received');
-      this._ws.pong();
-    });
+    this._ws.pong();
+  });
 
     return this._openPromise = new Promise((resolve, reject) => {
-      this._ws.on('open', () => {
-        this.isOpen = true;
-        if (this._pingEnabled) {
-          this._pingHeartbeat();
-        }
-        resolve();
-      });
-    });
+      this._ws.onopen = (() => {
+      this.isOpen = true;
+    if (this._pingEnabled) {
+      this._pingHeartbeat();
+    }
+    resolve();
+  });
+  });
   }
 
   /** @override */
   submit(bytecode, op, args, requestId, processor) {
     return this.open().then(() => new Promise((resolve, reject) => {
       if (requestId === null || requestId === undefined) {
-        requestId = utils.getUuid();
-        this._responseHandlers[requestId] = {
-          callback: (err, result) => err ? reject(err) : resolve(result),
+      requestId = utils.getUuid();
+      this._responseHandlers[requestId] = {
+        callback: (err, result) => err ? reject(err) : resolve(result),
           result: null
-        };
-      }
+    };
+    }
 
-      const message = Buffer.from(this._header + JSON.stringify(this._getRequest(requestId, bytecode, op, args, processor)));
-      this._ws.send(message);
-    }));
+    //const message = Buffer.from(this._header + JSON.stringify(this._getRequest(requestId, bytecode, op, args, processor)));
+     const message = this._header + JSON.stringify(this._getRequest(requestId, bytecode, op, args, processor));
+      var buf = new ArrayBuffer(message.length); // 2 bytes for each char
+      var bufView = new Uint8Array(buf);
+      for (var i=0, strLen=message.length; i < strLen; i++) {
+        bufView[i] = message.charCodeAt(i);
+      }
+      this._ws.binaryType = 'arraybuffer';
+    this._ws.send(bufView);
+  }));
   }
 
   _getDefaultReader(mimeType) {
@@ -186,6 +188,7 @@ class Connection extends EventEmitter {
     if (args) {
       args = this._adaptArgs(args, true);
     }
+
 
     return ({
       'requestId': { '@type': 'g:UUID', '@value': id },
@@ -208,20 +211,20 @@ class Connection extends EventEmitter {
 
     this._pingInterval = setInterval(() => {
       if (this.isOpen === false) {
-        // in case of if not open..
-        if (this._pingInterval) {
-          clearInterval(this._pingInterval);
-          this._pingInterval = null;
-        }
+      // in case of if not open..
+      if (this._pingInterval) {
+        clearInterval(this._pingInterval);
+        this._pingInterval = null;
       }
+    }
 
-      this._pongTimeout = setTimeout(() => {
-        this._ws.terminate();
-      }, this._pongTimeoutDelay);
+    this._pongTimeout = setTimeout(() => {
+      this._ws.terminate();
+  }, this._pongTimeoutDelay);
 
-      this._ws.ping();
+    this._ws.ping();
 
-    }, this._pingIntervalDelay);
+  }, this._pingIntervalDelay);
   }
 
   _handleError(err) {
@@ -239,8 +242,14 @@ class Connection extends EventEmitter {
     this.emit('close', code, message);
   }
 
-  _handleMessage(data) {
-    const response = this._reader.read(JSON.parse(data.toString()));
+  _handleMessage(msg) {
+    if(msg.data instanceof ArrayBuffer ) {
+      //if in browser javascript, the data are sent as Uint8
+      var data = String.fromCharCode.apply(null, new Uint8Array(msg.data));
+    }else{
+      data = msg;
+    }
+    const response = this._reader.read(JSON.parse(data));
     if (response.requestId === null || response.requestId === undefined) {
       // There was a serialization issue on the server that prevented the parsing of the request id
       // We invoke any of the pending handlers with an error
@@ -271,7 +280,7 @@ class Connection extends EventEmitter {
     if (response.status.code === responseStatusCode.authenticationChallenge && this._authenticator) {
       this._authenticator.evaluateChallenge(response.result.data).then(res => {
         return this.submit(null, 'authentication', res, response.requestId);
-      }).catch(handler.callback);
+    }).catch(handler.callback);
 
       return;
     }
@@ -344,10 +353,10 @@ class Connection extends EventEmitter {
         // in another map for types like EnumValue. Could be a nicer way to do this but for now it's solving the
         // problem with script submission of non JSON native types
         if (protocolLevel && key === 'bindings')
-          newObj[key] = this._adaptArgs(args[key], false);
-        else
-          newObj[key] = this._writer.adaptObject(args[key]);
-      });
+      newObj[key] = this._adaptArgs(args[key], false);
+    else
+      newObj[key] = this._writer.adaptObject(args[key]);
+    });
 
       return newObj;
     }
@@ -366,8 +375,8 @@ class Connection extends EventEmitter {
     if (!this._closePromise) {
       this._closePromise = new Promise(resolve => {
         this._closeCallback = resolve;
-        this._ws.close();
-      });
+      this._ws.close();
+    });
     }
     return this._closePromise;
   }
