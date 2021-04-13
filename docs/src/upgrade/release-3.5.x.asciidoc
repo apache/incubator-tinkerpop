@@ -410,6 +410,46 @@ these values are not hashable and will result in an error. By introducing a `Has
 See: link:https://issues.apache.org/jira/browse/TINKERPOP-2395[TINKERPOP-2395],
 link:https://issues.apache.org/jira/browse/TINKERPOP-2407[TINKERPOP-2407]
 
+==== Statistical Steps
+
+Gremlin is commonly used in statistical analysis. Examples include product, standard deviation and percentile calculation.
+While there are workarounds to achieve statistical calculations, it is better to add dedicated steps for performance or user experience reasons.
+In 3.5.x version of Gremlin, below statistical steps are introduced.
+
+===== stdev() Step
+
+The `stdev()`-step (*map*) operates on a stream of numbers and calculates the standard deviation of those numbers.
+
+[source,text]
+----
+gremlin> g.V().values('ages')
+==>1
+==>2
+==>3
+gremlin> g.V().values('ages').stdev()
+==>0.816
+gremlin> g.V().values('ages').fold().stdev(Scope.local)
+==>0.816
+----
+
+See: link:https://issues.apache.org/jira/browse/TINKERPOP-2487[TINKERPOP-2487]
+
+===== percentile() Step
+
+The `percentile()`-step (*map*) operates on a stream of numbers and determine the n-th percentile values.
+It accepts one or more integer values within range [0..100]. If there is only one percentile input, the step result would be a single number value.
+If multiple percentile inputs are provided, the step result would be a `Map<Integer, Number>`.
+
+[source,text]
+----
+gremlin> g.V().values('ages').percentile(50)
+==>2
+gremlin> g.V().values('ages').percentile(0, 100)
+==>[0: 1, 100: 3]
+----
+
+See: link:https://issues.apache.org/jira/browse/TINKERPOP-2487[TINKERPOP-2487]
+
 ==== Gremlin Server Audit Logging
 
 The `authentication.enableAuditlog` configuration property is deprecated, but replaced by the `enableAuditLog` property

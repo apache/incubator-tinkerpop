@@ -2218,6 +2218,42 @@ link:++https://tinkerpop.apache.org/javadocs/x.y.z/core/org/apache/tinkerpop/gre
 link:++https://tinkerpop.apache.org/javadocs/x.y.z/core/org/apache/tinkerpop/gremlin/process/traversal/dsl/graph/GraphTraversal.html#min-org.apache.tinkerpop.gremlin.process.traversal.Scope-++[`min(Scope)`],
 link:++https://tinkerpop.apache.org/javadocs/x.y.z/core/org/apache/tinkerpop/gremlin/process/traversal/Scope.html++[`Scope`]
 
+[[stdev-step]]
+=== Stdev Step
+
+The `stdev()`-step (*map*) operates on a stream of numbers and calculates the standard deviation of those numbers.
+
+[gremlin-groovy,modern]
+----
+g.V().values('ages')
+g.V().values('ages').stdev()
+----
+
+*Additional References*
+
+link:++https://tinkerpop.apache.org/javadocs/x.y.z/core/org/apache/tinkerpop/gremlin/process/traversal/dsl/graph/GraphTraversal.html#stdev--++[`stdev()`],
+link:++https://tinkerpop.apache.org/javadocs/x.y.z/core/org/apache/tinkerpop/gremlin/process/traversal/dsl/graph/GraphTraversal.html#stdev-org.apache.tinkerpop.gremlin.process.traversal.Scope-++[`stdev(Scope)`],
+link:++https://tinkerpop.apache.org/javadocs/x.y.z/core/org/apache/tinkerpop/gremlin/process/traversal/Scope.html++[`Scope`]
+
+[[percentile-step]]
+=== Percentile Step
+
+The `percentile()`-step (*map*) operates on a stream of numbers and determine the n-th percentile values.
+It accepts one or more integer values within range [0..100]. If there is only one percentile input, the step result would be a single number value.
+If multiple percentile inputs are provided, the step result would be a `Map<Integer, Number>`.
+
+[gremlin-groovy,modern]
+----
+g.V().values('ages')
+g.V().values('ages').percentile(50) <1>
+g.V().values('ages').percentile(50, 90) <2>
+----
+
+<1> Calculate the 50-th percentile / median value of all persons' ages. The result is a single value.
+
+<2> Calculate the 50-th and 90-th percentile value of persons' ages. The result is a map.
+
+
 [[none-step]]
 === None Step
 

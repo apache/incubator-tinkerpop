@@ -21,6 +21,10 @@ package org.apache.tinkerpop.gremlin.util;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.MathContext;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.BiFunction;
 
 /**
@@ -370,6 +374,37 @@ public final class NumberHelper {
         return isNonValue(a) ? b :
                 isNonValue(b) ? a :
                         a.compareTo(b) > 0 ? a : b;
+    }
+
+    public static <S extends Number> S percentile(final List<S> nums, final int quantile) {
+        nums.sort(NumberHelper::compare);
+        return percentileHelper(nums, quantile);
+    }
+
+    public static <S extends Number> Map<Integer, S> percentiles(final List<S> nums, final int... quantiles) {
+        nums.sort(NumberHelper::compare);
+        Map<Integer, S> percentileMap = new HashMap<>(quantiles.length);
+        for (int quantile : quantiles) {
+            percentileMap.putIfAbsent(quantile, percentileHelper(nums, quantile));
+        }
+        return percentileMap;
+    }
+
+    /**
+     * The nearest-rank method described in https://en.wikipedia.org/wiki/Percentile is used to calculate percentile of input.
+     */
+    private static <S extends Number> S percentileHelper(List<S> nums, int quantiles) {
+        if (quantiles < 0 || quantiles > 100) {
+            throw new IllegalArgumentException("percentile value must between 0 and 100");
+        }
+        if (nums == null || nums.isEmpty()) {
+            return null;
+        }
+        int index = (int)Math.ceil((quantiles / 100.0) * nums.size());
+        if (index < 1) {
+            index = 1;
+        }
+        return nums.get(index - 1);
     }
 
     public static Integer compare(final Number a, final Number b) {

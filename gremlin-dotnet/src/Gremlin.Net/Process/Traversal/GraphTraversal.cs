@@ -1215,6 +1215,28 @@ namespace Gremlin.Net.Process.Traversal
         }
 
         /// <summary>
+        ///     Adds the percentile step to this <see cref="GraphTraversal{SType, EType}" />.
+        /// </summary>
+        public GraphTraversal<S, object> Percentile (Scope scope, params int[] n)
+        {
+            var args = new List<object>(1 + n.Length) {scope};
+            args.AddRange(n.Cast<object>());
+            Bytecode.AddStep("percentile", args.ToArray());
+            return Wrap<S, object>(this);
+        }
+
+        /// <summary>
+        ///     Adds the percentile step to this <see cref="GraphTraversal{SType, EType}" />.
+        /// </summary>
+        public GraphTraversal<S, object> Percentile (params int[] n)
+        {
+            var args = new List<object>(0 + n.Length) {};
+            args.AddRange(n.Cast<object>());
+            Bytecode.AddStep("percentile", args.ToArray());
+            return Wrap<S, object>(this);
+        }
+
+        /// <summary>
         ///     Adds the profile step to this <see cref="GraphTraversal{SType, EType}" />.
         /// </summary>
         public GraphTraversal<S, E2> Profile<E2> ()
@@ -1495,6 +1517,24 @@ namespace Gremlin.Net.Process.Traversal
         public GraphTraversal<S, E2> Skip<E2> (long skip)
         {
             Bytecode.AddStep("skip", skip);
+            return Wrap<S, E2>(this);
+        }
+
+        /// <summary>
+        ///     Adds the stdev step to this <see cref="GraphTraversal{SType, EType}" />.
+        /// </summary>
+        public GraphTraversal<S, E2> Stdev<E2> ()
+        {
+            Bytecode.AddStep("stdev");
+            return Wrap<S, E2>(this);
+        }
+
+        /// <summary>
+        ///     Adds the stdev step to this <see cref="GraphTraversal{SType, EType}" />.
+        /// </summary>
+        public GraphTraversal<S, E2> Stdev<E2> (Scope scope)
+        {
+            Bytecode.AddStep("stdev", scope);
             return Wrap<S, E2>(this);
         }
 

@@ -898,6 +898,26 @@ namespace Gremlin.Net.Process.Traversal
         }
 
         /// <summary>
+        ///     Spawns a <see cref="GraphTraversal{SType, EType}" /> and adds the percentile step to that traversal.
+        /// </summary>
+        public static GraphTraversal<object, object> Percentile(Scope scope, params int[] n)
+        {
+            return n.Length == 0
+                ? new GraphTraversal<object, object>().Percentile(scope)
+                : new GraphTraversal<object, object>().Percentile(scope, n);            
+        }
+
+        /// <summary>
+        ///     Spawns a <see cref="GraphTraversal{SType, EType}" /> and adds the percentile step to that traversal.
+        /// </summary>
+        public static GraphTraversal<object, object> Percentile(params int[] n)
+        {
+            return n.Length == 0
+                ? new GraphTraversal<object, object>().Percentile()
+                : new GraphTraversal<object, object>().Percentile(n);            
+        }
+
+        /// <summary>
         ///     Spawns a <see cref="GraphTraversal{SType, EType}" /> and adds the project step to that traversal.
         /// </summary>
         public static GraphTraversal<object, IDictionary<string, E2>> Project<E2>(string projectKey, params string[] projectKeys)
@@ -1109,6 +1129,22 @@ namespace Gremlin.Net.Process.Traversal
         public static GraphTraversal<object, E2> Skip<E2>(long skip)
         {
             return new GraphTraversal<object, E2>().Skip<E2>(skip);            
+        }
+
+        /// <summary>
+        ///     Spawns a <see cref="GraphTraversal{SType, EType}" /> and adds the stdev step to that traversal.
+        /// </summary>
+        public static GraphTraversal<object, double> Stdev()
+        {
+            return new GraphTraversal<object, double>().Stdev<double>();
+        }
+
+        /// <summary>
+        ///     Spawns a <see cref="GraphTraversal{SType, EType}" /> and adds the stdev step to that traversal.
+        /// </summary>
+        public static GraphTraversal<object, double> Stdev(Scope scope)
+        {
+            return new GraphTraversal<object, double>().Stdev<double>(scope);
         }
 
         /// <summary>

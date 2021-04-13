@@ -474,6 +474,34 @@ public class __ {
     }
 
     /**
+     * @see GraphTraversal#stdev()
+     */
+    public static <A> GraphTraversal<A, Double> stdev() {
+        return __.<A>start().stdev();
+    }
+
+    /**
+     * @see GraphTraversal#stdev(Scope)
+     */
+    public static <A> GraphTraversal<A, Double> stdev(final Scope scope) {
+        return __.<A>start().stdev(scope);
+    }
+
+    /**
+     * @see GraphTraversal#percentile(int...)
+     */
+    public static <A> GraphTraversal<A, Object> percentile(final int... n) {
+        return __.<A>start().percentile(n);
+    }
+
+    /**
+     * @see GraphTraversal#percentile(Scope, int...)
+     */
+    public static <A> GraphTraversal<A, Object> percentile(final Scope scope, final int... n) {
+        return __.<A>start().percentile(scope, n);
+    }
+
+    /**
      * @see GraphTraversal#group()
      */
     public static <A, K, V> GraphTraversal<A, Map<K, V>> group() {

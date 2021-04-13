@@ -105,6 +105,8 @@ import org.apache.tinkerpop.gremlin.process.traversal.step.map.NoOpBarrierStep;
 import org.apache.tinkerpop.gremlin.process.traversal.step.map.OrderGlobalStep;
 import org.apache.tinkerpop.gremlin.process.traversal.step.map.OrderLocalStep;
 import org.apache.tinkerpop.gremlin.process.traversal.step.map.PathStep;
+import org.apache.tinkerpop.gremlin.process.traversal.step.map.PercentileGlobalStep;
+import org.apache.tinkerpop.gremlin.process.traversal.step.map.PercentileLocalStep;
 import org.apache.tinkerpop.gremlin.process.traversal.step.map.ProjectStep;
 import org.apache.tinkerpop.gremlin.process.traversal.step.map.PropertiesStep;
 import org.apache.tinkerpop.gremlin.process.traversal.step.map.PropertyKeyStep;
@@ -115,6 +117,8 @@ import org.apache.tinkerpop.gremlin.process.traversal.step.map.SackStep;
 import org.apache.tinkerpop.gremlin.process.traversal.step.map.SampleLocalStep;
 import org.apache.tinkerpop.gremlin.process.traversal.step.map.SelectOneStep;
 import org.apache.tinkerpop.gremlin.process.traversal.step.map.SelectStep;
+import org.apache.tinkerpop.gremlin.process.traversal.step.map.StdevGlobalStep;
+import org.apache.tinkerpop.gremlin.process.traversal.step.map.StdevLocalStep;
 import org.apache.tinkerpop.gremlin.process.traversal.step.map.SumGlobalStep;
 import org.apache.tinkerpop.gremlin.process.traversal.step.map.SumLocalStep;
 import org.apache.tinkerpop.gremlin.process.traversal.step.map.TailLocalStep;
@@ -987,6 +991,52 @@ public interface GraphTraversal<S, E> extends Traversal<S, E> {
     public default <E2 extends Number> GraphTraversal<S, E2> mean(final Scope scope) {
         this.asAdmin().getBytecode().addStep(Symbols.mean, scope);
         return this.asAdmin().addStep(scope.equals(Scope.global) ? new MeanGlobalStep(this.asAdmin()) : new MeanLocalStep(this.asAdmin()));
+    }
+
+    /**
+     * Calculate the standard deviation value in the stream.
+     *
+     * @return the traversal with an appended {@link StdevGlobalStep}.
+     * @see <a href="http://tinkerpop.apache.org/docs/${project.version}/reference/#stdev-step" target="_blank">Reference Documentation - Stdev Step</a>
+     */
+    public default <E2 extends Number> GraphTraversal<S, E2> stdev() {
+        this.asAdmin().getBytecode().addStep(Symbols.stdev);
+        return this.asAdmin().addStep(new StdevGlobalStep<>(this.asAdmin()));
+    }
+
+    /**
+     * Calculate the standard deviation value in the stream given the {@link Scope}.
+     *
+     * @return the traversal with an appended {@link StdevGlobalStep} or {@link StdevLocalStep} depending on the {@link Scope}.
+     * @see <a href="http://tinkerpop.apache.org/docs/${project.version}/reference/#stdev-step" target="_blank">Reference Documentation - Stdev Step</a>
+     */
+    public default <E2 extends Number> GraphTraversal<S, E2> stdev(final Scope scope) {
+        this.asAdmin().getBytecode().addStep(Symbols.stdev, scope);
+        return this.asAdmin().addStep(scope.equals(Scope.global) ? new StdevGlobalStep(this.asAdmin()) : new StdevLocalStep(this.asAdmin()));
+    }
+
+    /**
+     * Calculate required percentile value.
+     *
+     * @param n the quantile value must be an integer between 0 and 100, or an IllegalArgumentException will be thrown.
+     * @return the traversal with an appended {@link PercentileGlobalStep}.
+     * @see <a href="http://tinkerpop.apache.org/docs/${project.version}/reference/#percentile-step" target="_blank">Reference Documentation - Percentile Step</a>
+     */
+    public default GraphTraversal<S, Object> percentile(final int... n) {
+        this.asAdmin().getBytecode().addStep(Symbols.percentile);
+        return this.asAdmin().addStep(new PercentileGlobalStep(this.asAdmin(), n));
+    }
+
+    /**
+     * Calculate required percentile value.
+     *
+     * @param n the quantile value must be an integer between 0 and 100, or an IllegalArgumentException will be thrown.
+     * @return the traversal with an appended {@link PercentileGlobalStep} or {@link PercentileLocalStep} depending on the {@link Scope}.
+     * @see <a href="http://tinkerpop.apache.org/docs/${project.version}/reference/#percentile-step" target="_blank">Reference Documentation - Percentile Step</a>
+     */
+    public default GraphTraversal<S, Object> percentile(final Scope scope, final int... n) {
+        this.asAdmin().getBytecode().addStep(Symbols.percentile);
+        return this.asAdmin().addStep(scope.equals(Scope.global) ? new PercentileGlobalStep(this.asAdmin(), n) : new PercentileLocalStep(this.asAdmin(), n));
     }
 
     /**
@@ -3046,6 +3096,8 @@ public interface GraphTraversal<S, E> extends Traversal<S, E> {
         public static final String max = "max";
         public static final String min = "min";
         public static final String mean = "mean";
+        public static final String stdev = "stdev";
+        public static final String percentile = "percentile";
         public static final String group = "group";
         public static final String groupCount = "groupCount";
         public static final String tree = "tree";

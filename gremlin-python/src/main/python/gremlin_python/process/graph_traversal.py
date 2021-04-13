@@ -373,6 +373,14 @@ class GraphTraversal(Traversal):
         self.bytecode.add_step("mean", *args)
         return self
 
+    def stdev(self, *args):
+        self.bytecode.add_step("stdev", *args)
+        return self
+
+    def percentile(self, *args):
+        self.bytecode.add_step("percentile", *args)
+        return self
+
     def min_(self, *args):
         self.bytecode.add_step("min", *args)
         return self
