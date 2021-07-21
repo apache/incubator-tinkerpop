@@ -19,6 +19,7 @@
 package org.apache.tinkerpop.gremlin.process.traversal.step.branch;
 
 import org.apache.tinkerpop.gremlin.process.traversal.Step;
+import org.apache.tinkerpop.gremlin.process.traversal.step.Barrier;
 import org.apache.tinkerpop.gremlin.process.traversal.Traversal;
 import org.apache.tinkerpop.gremlin.process.traversal.Traverser;
 import org.apache.tinkerpop.gremlin.process.traversal.step.TraversalParent;
@@ -31,6 +32,7 @@ import org.apache.tinkerpop.gremlin.util.iterator.IteratorUtils;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -187,17 +189,40 @@ public final class RepeatStep<S> extends ComputerAwareStep<S, S> implements Trav
         return result;
     }
 
+    private final LinkedList<Traverser.Admin<S>> stashedStarts = new LinkedList<>();
+
+    private Traverser.Admin<S> nextStart(final boolean useDfs) {
+		if (!useDfs) {
+			return this.starts.next();
+		} else {
+			if (this.starts.hasNext()) {
+				return this.starts.next();
+			} else {
+				return this.stashedStarts.pop();
+			}
+		}
+    }
+
     @Override
     protected Iterator<Traverser.Admin<S>> standardAlgorithm() throws NoSuchElementException {
         if (null == this.repeatTraversal)
             throw new IllegalStateException("The repeat()-traversal was not defined: " + this);
-
+        final List<Step> steps = this.repeatTraversal.getSteps();
+        final Step stepBeforeRepeatEndStep = steps.get(steps.size() - 2);
+        final boolean useDfs = !(stepBeforeRepeatEndStep instanceof Barrier);
         while (true) {
             if (this.repeatTraversal.getEndStep().hasNext()) {
                 return this.repeatTraversal.getEndStep();
             } else {
-                final Traverser.Admin<S> start = this.starts.next();
+                final Traverser.Admin<S> start = nextStart(useDfs);
                 start.initialiseLoops(this.getId(), this.loopName);
+                if (useDfs) {
+                    final List<Traverser.Admin<S>> localStarts = new ArrayList<>();
+                    while (this.starts.hasNext()) {
+                        localStarts.add(this.starts.next());
+                    }
+                    stashedStarts.addAll(0, localStarts);
+                }
                 if (doUntil(start, true)) {
                     start.resetLoops();
                     return IteratorUtils.of(start);
@@ -240,10 +265,12 @@ public final class RepeatStep<S> extends ComputerAwareStep<S, S> implements Trav
 
     public static <A, B, C extends Traversal<A, B>> C addRepeatToTraversal(final C traversal, final Traversal.Admin<B, B> repeatTraversal) {
         final Step<?, B> step = traversal.asAdmin().getEndStep();
+        boolean setBfs = false;
         if (step instanceof RepeatStep && null == ((RepeatStep) step).repeatTraversal) {
             ((RepeatStep<B>) step).setRepeatTraversal(repeatTraversal);
         } else {
             final RepeatStep<B> repeatStep = new RepeatStep<>(traversal.asAdmin());
+            List<Step> steps = repeatTraversal.getSteps();
             repeatStep.setRepeatTraversal(repeatTraversal);
             traversal.asAdmin().addStep(repeatStep);
         }
@@ -289,11 +316,41 @@ public final class RepeatStep<S> extends ComputerAwareStep<S, S> implements Trav
             super(traversal);
         }
 
+        final LinkedList<Traverser.Admin<S>> stashedStarts = new LinkedList<>();
+
+        private Traverser.Admin<S> nextStart(RepeatStep<S> repeatStep, boolean useDfs) {
+            if (!useDfs) {
+                return this.starts.next();
+            } else {
+                if (this.starts.hasNext()) {
+                    return this.starts.next();
+                } else {
+                    return this.stashedStarts.pop();
+                }
+            }
+        }
+
+        @Override
+        public boolean hasNext() {
+            return super.hasNext() || !this.stashedStarts.isEmpty();
+        }
+
         @Override
         protected Iterator<Traverser.Admin<S>> standardAlgorithm() throws NoSuchElementException {
             final RepeatStep<S> repeatStep = (RepeatStep<S>) this.getTraversal().getParent();
+            final List<Step> steps = repeatStep.repeatTraversal.getSteps();
+            final Step stepBeforeRepeatEndStep = steps.get(steps.size() - 2);
+            final boolean useDfs = !(stepBeforeRepeatEndStep instanceof Barrier);
             while (true) {
-                final Traverser.Admin<S> start = this.starts.next();
+                final Traverser.Admin<S> start = nextStart(repeatStep, useDfs);
+                start.incrLoops();
+                if (useDfs) {
+                    final List<Traverser.Admin<S>> localStarts = new ArrayList<>();
+                    while (this.starts.hasNext()) {
+                        localStarts.add(this.starts.next());
+                    }
+                    stashedStarts.addAll(0, localStarts);
+                }
                 start.incrLoops();
                 if (repeatStep.doUntil(start, false)) {
                     start.resetLoops();

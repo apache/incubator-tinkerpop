@@ -350,3 +350,17 @@ Scenario: g_VX6X_repeatXa_bothXcreatedX_simplePathX_emitXrepeatXb_bothXknowsXX_u
   Then the result should be unordered
     | result |
     | josh |
+  Scenario: g_V_hasXname_markoX_repeatXoutE_order_byXweight_decrX_inVX_emit
+    Given the modern graph
+    And the traversal of
+    """
+    g.V().has("name", "marko").repeat(__.outE().order().by("weight", Order.decr).inV()).emit()
+    """
+    When iterated to list
+    Then the result should be ordered
+      | result |
+      | josh |
+      | ripple |
+      | lop |
+      | vadas |
+      | lop |

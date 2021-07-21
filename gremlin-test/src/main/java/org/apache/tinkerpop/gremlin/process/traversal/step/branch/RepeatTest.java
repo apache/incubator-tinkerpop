@@ -47,6 +47,7 @@ import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.in;
 import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.loops;
 import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.out;
 import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.outE;
+import static org.apache.tinkerpop.gremlin.process.traversal.Order.decr;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
@@ -123,6 +124,8 @@ public abstract class RepeatTest extends AbstractGremlinProcessTest {
     public abstract Traversal<Vertex, String> get_g_V_emit_repeatXa_outXknows_filterXloops_isX0XX_lang();
 
     public abstract Traversal<Vertex, String> get_g_VX6X_repeatXa_bothXcreatedX_simplePathX_emitXrepeatXb_bothXknowsXX_untilXloopsXbX_asXb_whereXloopsXaX_asXbX_hasXname_vadasXX_dedup_name(final Object v6Id);
+
+    public abstract Traversal<Vertex, Vertex> get_g_V_hasXname_markoX_repeatXoutE_order_byXweight_decrX_inVX_emit();
 
     @Test
     @LoadGraphWith(MODERN)
@@ -459,6 +462,18 @@ public abstract class RepeatTest extends AbstractGremlinProcessTest {
         assertFalse(traversal.hasNext());
     }
 
+    @Test
+    @LoadGraphWith(MODERN)
+    public void g_V_hasXname_markoX_repeatXoutE_order_byXweight_decrX_inVX_emit() {
+        final List<Vertex> vertices = get_g_V_hasXname_markoX_repeatXoutE_order_byXweight_decrX_inVX_emit().toList();
+        assertEquals(5, vertices.size());
+        assertEquals("josh", vertices.get(0).values("name").next());
+        assertEquals("ripple", vertices.get(1).values("name").next());
+        assertEquals("lop", vertices.get(2).values("name").next());
+        assertEquals("vadas", vertices.get(3).values("name").next());
+        assertEquals("lop", vertices.get(4).values("name").next());
+    }
+
     public static class Traversals extends RepeatTest {
 
         @Override
@@ -580,6 +595,11 @@ public abstract class RepeatTest extends AbstractGremlinProcessTest {
         @Override
         public Traversal<Vertex, String> get_g_VX1X_repeatXrepeatXunionXout_uses_out_traversesXX_whereXloops_isX0X_timesX1X_timeX2X_name(final Object v1Id) {
             return g.V(v1Id).repeat(__.repeat(__.union(out("uses"), out("traverses")).where(__.loops().is(0))).times(1)).times(2).values("name");
+        }
+
+        @Override
+        public Traversal<Vertex, Vertex> get_g_V_hasXname_markoX_repeatXoutE_order_byXweight_decrX_inVX_emit() {
+            return g.V().has("name", "marko").repeat(__.outE().order().by("weight", decr).inV()).emit();
         }
     }
 }
